@@ -11,6 +11,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 from oslo_versionedobjects import fields as obj_fields
 import six
 
@@ -38,21 +39,14 @@ class RangeConstrainedInteger(obj_fields.Integer):
                 start=start, end=end)
         super(RangeConstrainedInteger, self).__init__(**kwargs)
 
-    def _validate_value(self, value):
+    def coerce(self, obj, attr, value):
         if not isinstance(value, six.integer_types):
             msg = _("Field value %s is not an integer") % value
             raise ValueError(msg)
         if not self._start <= value <= self._end:
             msg = _("Field value %s is invalid") % value
             raise ValueError(msg)
-
-    def coerce(self, obj, attr, value):
-        self._validate_value(value)
         return super(RangeConstrainedInteger, self).coerce(obj, attr, value)
-
-    def stringify(self, value):
-        self._validate_value(value)
-        return super(RangeConstrainedInteger, self).stringify(value)
 
 
 class IPNetworkPrefixLen(RangeConstrainedInteger):
@@ -83,7 +77,7 @@ class IntegerEnum(obj_fields.Integer):
         self._valid_values = valid_values
         super(IntegerEnum, self).__init__(**kwargs)
 
-    def _validate_value(self, value):
+    def coerce(self, obj, attr, value):
         if not isinstance(value, six.integer_types):
             msg = _("Field value %s is not an integer") % value
             raise ValueError(msg)
@@ -94,14 +88,7 @@ class IntegerEnum(obj_fields.Integer):
                 {'value': value, 'values': self._valid_values}
             )
             raise ValueError(msg)
-
-    def coerce(self, obj, attr, value):
-        self._validate_value(value)
         return super(IntegerEnum, self).coerce(obj, attr, value)
-
-    def stringify(self, value):
-        self._validate_value(value)
-        return super(IntegerEnum, self).stringify(value)
 
 
 class IPVersionEnum(IntegerEnum):
@@ -136,3 +123,20 @@ class EtherTypeEnumField(obj_fields.AutoTypedField):
 class IpProtocolEnumField(obj_fields.AutoTypedField):
     AUTO_TYPE = obj_fields.Enum(
         valid_values=list(constants.IP_PROTOCOL_MAP.keys()))
+
+
+class MACAddress(obj_fields.FieldType):
+    """MACAddress custom field.
+
+    This custom field is different from the one provided by
+    oslo.versionedobjects library: it uses netaddr.EUI type instead of strings.
+    """
+    def coerce(self, obj, attr, value):
+        if not isinstance(value, netaddr.EUI):
+            msg = _("Field value %s is not a netaddr.EUI") % value
+            raise ValueError(msg)
+        return super(MACAddress, self).coerce(obj, attr, value)
+
+
+class MACAddressField(obj_fields.AutoTypedField):
+    AUTO_TYPE = MACAddress()
