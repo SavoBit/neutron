@@ -10,24 +10,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_versionedobjects import base as obj_base
 from oslo_versionedobjects import fields as obj_fields
 
-from neutron.db.extra_dhcp_opt import models
-from neutron.objects import base
+STANDARD_ATTRIBUTES = {
+    'description': obj_fields.StringField(),
+    'created_at': obj_fields.DateTimeField(nullable=True, tzinfo_aware=False),
+    'updated_at': obj_fields.DateTimeField(nullable=True, tzinfo_aware=False),
+}
 
 
-@obj_base.VersionedObjectRegistry.register
-class ExtraDhcpOpt(base.NeutronDbObject):
-    # Version 1.0: Initial version
-    VERSION = '1.0'
-
-    db_model = models.ExtraDhcpOpt
-
-    fields = {
-         'id': obj_fields.UUIDField(),
-         'port_id': obj_fields.UUIDField(),
-         'opt_name': obj_fields.StringField(),
-         'opt_value': obj_fields.StringField(),
-         'ip_version': obj_fields.IntegerField(),
-    }
+def add_standard_attributes(cls):
+    # Don't use parent's fields in case child class doesn't create
+    # its own instance of list
+    cls.fields = cls.fields.copy()
+    cls.fields.update(STANDARD_ATTRIBUTES)
