@@ -49,11 +49,7 @@ then
         # we use a commit on branch-2.5 that fixes compilation with the
         # latest ubuntu trusty kernel.
         OVS_BRANCH=8c0b419a0b9ac0141d6973dcc80306dfc6a83d31
-        for package in openvswitch openvswitch-switch openvswitch-common; do
-            if is_package_installed $package; then
-                uninstall_package $package
-            fi
-        done
+        remove_ovs_packages
         compile_ovs True /usr /var
         start_new_ovs
     fi
@@ -63,6 +59,7 @@ then
 
 elif [ "$VENV" == "api" -o "$VENV" == "api-pecan" -o "$VENV" == "full-pecan" ]
 then
+    load_rc_hook api_extensions
     if [ "$VENV" == "api-pecan" -o "$VENV" == "full-pecan" ]
     then
         load_conf_hook pecan
