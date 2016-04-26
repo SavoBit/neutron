@@ -17,6 +17,8 @@ import collections
 import itertools
 
 import netaddr
+from neutron_lib.api import validators
+from neutron_lib import constants as const
 from neutron_lib import exceptions as exc
 from oslo_config import cfg
 from oslo_db import exception as db_exc
@@ -24,7 +26,6 @@ from oslo_log import log as logging
 from sqlalchemy.orm import exc as orm_exc
 
 from neutron._i18n import _, _LI
-from neutron.api.v2 import attributes
 from neutron.common import constants
 from neutron.common import exceptions as n_exc
 from neutron.common import ipv6_utils
@@ -51,7 +52,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
 
     @staticmethod
     def _gateway_ip_str(subnet, cidr_net):
-        if subnet.get('gateway_ip') is attributes.ATTR_NOT_SPECIFIED:
+        if subnet.get('gateway_ip') is const.ATTR_NOT_SPECIFIED:
             return str(netaddr.IPNetwork(cidr_net).network + 1)
         return subnet.get('gateway_ip')
 
@@ -78,8 +79,8 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
 
         Allocation pools can be set for specific subnet request only
         """
-        has_allocpool = attributes.is_attr_set(subnet['allocation_pools'])
-        is_any_subnetpool_request = not attributes.is_attr_set(subnet['cidr'])
+        has_allocpool = validators.is_attr_set(subnet['allocation_pools'])
+        is_any_subnetpool_request = not validators.is_attr_set(subnet['cidr'])
         if is_any_subnetpool_request and has_allocpool:
             reason = _("allocation_pools allowed only "
                        "for specific subnet requests.")
@@ -88,7 +89,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
     def _validate_ip_version_with_subnetpool(self, subnet, subnetpool):
         """Validates ip version for subnet_pool and requested subnet"""
         ip_version = subnet.get('ip_version')
-        has_ip_version = attributes.is_attr_set(ip_version)
+        has_ip_version = validators.is_attr_set(ip_version)
         if has_ip_version and ip_version != subnetpool.ip_version:
             args = {'req_ver': str(subnet['ip_version']),
                     'pool_ver': str(subnetpool.ip_version)}
@@ -311,7 +312,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
         # Subnets are all the subnets belonging to the same network.
         if not subnets:
             msg = _('IP allocation requires subnets for network')
-            raise n_exc.InvalidInput(error_message=msg)
+            raise exc.InvalidInput(error_message=msg)
 
         if 'subnet_id' in fixed:
             def get_matching_subnet():
@@ -349,7 +350,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
 
     def _prepare_allocation_pools(self, allocation_pools, cidr, gateway_ip):
         """Returns allocation pools represented as list of IPRanges"""
-        if not attributes.is_attr_set(allocation_pools):
+        if not validators.is_attr_set(allocation_pools):
             return self.generate_pools(cidr, gateway_ip)
 
         ip_range_pools = self.pools_to_ip_range(allocation_pools)
@@ -370,7 +371,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
         # (non-optional, e.g. IPv6 SLAAC) addresses.
         # NOTE: Need to check the SNAT ports for DVR routers here since
         # they consume an IP.
-        if device_owner in constants.ROUTER_INTERFACE_OWNERS_SNAT:
+        if device_owner in const.ROUTER_INTERFACE_OWNERS_SNAT:
             return True
 
         subnet = self._get_subnet(context, subnet_id)
@@ -449,7 +450,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
         context.session.add(subnet)
         # NOTE(changzhi) Store DNS nameservers with order into DB one
         # by one when create subnet with DNS nameservers
-        if attributes.is_attr_set(dns_nameservers):
+        if validators.is_attr_set(dns_nameservers):
             for order, server in enumerate(dns_nameservers):
                 dns = models_v2.DNSNameServer(
                     address=server,
@@ -457,7 +458,7 @@ class IpamBackendMixin(db_base_plugin_common.DbBasePluginCommon):
                     subnet_id=subnet.id)
                 context.session.add(dns)
 
-        if attributes.is_attr_set(host_routes):
+        if validators.is_attr_set(host_routes):
             for rt in host_routes:
                 route = models_v2.SubnetRoute(
                     subnet_id=subnet.id,

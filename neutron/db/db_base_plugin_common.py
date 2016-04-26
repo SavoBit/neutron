@@ -15,13 +15,15 @@
 
 import functools
 
+from neutron_lib.api import validators
+from neutron_lib import constants
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 from sqlalchemy.orm import exc
 
 from neutron.api.v2 import attributes
-from neutron.common import constants
+from neutron.common import constants as n_const
 from neutron.common import exceptions
 from neutron.common import utils
 from neutron.db import common_db_mixin
@@ -274,7 +276,7 @@ class DbBasePluginCommon(common_db_mixin.CommonDbMixin):
                'name': network['name'],
                'tenant_id': network['tenant_id'],
                'admin_state_up': network['admin_state_up'],
-               'mtu': network.get('mtu', constants.DEFAULT_NETWORK_MTU),
+               'mtu': network.get('mtu', n_const.DEFAULT_NETWORK_MTU),
                'status': network['status'],
                'subnets': [subnet['id']
                            for subnet in network['subnets']]}
@@ -308,9 +310,9 @@ class DbBasePluginCommon(common_db_mixin.CommonDbMixin):
                 'gateway_ip': gateway_ip,
                 'description': subnet.get('description')}
         if subnet['ip_version'] == 6 and subnet['enable_dhcp']:
-            if attributes.is_attr_set(subnet['ipv6_ra_mode']):
+            if validators.is_attr_set(subnet['ipv6_ra_mode']):
                 args['ipv6_ra_mode'] = subnet['ipv6_ra_mode']
-            if attributes.is_attr_set(subnet['ipv6_address_mode']):
+            if validators.is_attr_set(subnet['ipv6_address_mode']):
                 args['ipv6_address_mode'] = subnet['ipv6_address_mode']
         return args
 

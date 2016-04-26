@@ -16,6 +16,8 @@
 import contextlib
 
 import mock
+from neutron_lib.api import validators
+from neutron_lib import constants as const
 from oslo_config import cfg
 import oslo_db.exception as exc
 import six
@@ -23,7 +25,7 @@ import testtools
 import webob.exc
 
 from neutron.api.v2 import attributes as attr
-from neutron.common import constants as const
+from neutron.common import constants as n_const
 from neutron.common import exceptions as n_exc
 from neutron import context
 from neutron.db import db_base_plugin_v2
@@ -180,7 +182,7 @@ class SecurityGroupTestPlugin(db_base_plugin_v2.NeutronDbPluginV2,
     def create_port(self, context, port):
         tenant_id = port['port']['tenant_id']
         default_sg = self._ensure_default_security_group(context, tenant_id)
-        if not attr.is_attr_set(port['port'].get(ext_sg.SECURITYGROUPS)):
+        if not validators.is_attr_set(port['port'].get(ext_sg.SECURITYGROUPS)):
             port['port'][ext_sg.SECURITYGROUPS] = [default_sg]
         session = context.session
         with session.begin(subtransactions=True):
@@ -843,7 +845,7 @@ class TestSecurityGroups(SecurityGroupDBTestCase):
             direction = "ingress"
             ethertype = const.IPv6
             remote_ip_prefix = "2001::f401:56ff:fefe:d3dc/128"
-            protocol = const.PROTO_NAME_IPV6_ICMP_LEGACY
+            protocol = n_const.PROTO_NAME_IPV6_ICMP_LEGACY
             keys = [('remote_ip_prefix', remote_ip_prefix),
                     ('security_group_id', security_group_id),
                     ('direction', direction),

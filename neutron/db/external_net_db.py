@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.api import validators
+from neutron_lib import constants as l3_constants
 from neutron_lib import exceptions as n_exc
 import sqlalchemy as sa
 from sqlalchemy import orm
@@ -26,7 +28,6 @@ from neutron.callbacks import events
 from neutron.callbacks import exceptions as c_exc
 from neutron.callbacks import registry
 from neutron.callbacks import resources
-from neutron.common import constants as l3_constants
 from neutron.db import db_base_plugin_v2
 from neutron.db import l3_db
 from neutron.db import model_base
@@ -118,7 +119,7 @@ class External_net_db_mixin(object):
 
     def _process_l3_create(self, context, net_data, req_data):
         external = req_data.get(external_net.EXTERNAL)
-        external_set = attributes.is_attr_set(external)
+        external_set = validators.is_attr_set(external)
 
         if not external_set:
             return
@@ -157,7 +158,7 @@ class External_net_db_mixin(object):
 
         new_value = req_data.get(external_net.EXTERNAL)
         net_id = net_data['id']
-        if not attributes.is_attr_set(new_value):
+        if not validators.is_attr_set(new_value):
             return
 
         if net_data.get(external_net.EXTERNAL) == new_value:
